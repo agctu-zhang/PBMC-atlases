@@ -45,12 +45,9 @@ for (i in species){
 
 names(feature_all)
 
-# 循环遍历工作表和对应的列名称
 for (i in names(feature_all)) {
-  # 读取对应的工作表数据
   all_ortholog <- openxlsx::read.xlsx("./protein/ortholog_to_human.xlsx", sheet = i)
   column_name <- paste0(i, '.gene.name')
-  # 匹配并赋值给相应的列
   feature_all[[i]][["Human.gene.name"]] <- all_ortholog$Human.gene.name[match(feature_all[[i]][[column_name]], all_ortholog[[column_name]])]
 }
 
@@ -58,12 +55,9 @@ saveRDS(feature_all, './rds/orthologs_to_human.rds')
 # feature_all <- readRDS('./rds/orthologs_to_mouse.rds')
 ######## gene name change #######
 for (i in names(mn.list)){
-  feature_all[[i]][is.na(feature_all[[i]])] <- "Unknown"  # 将没有匹配到的行名设置为 "Unknown"
+  feature_all[[i]][is.na(feature_all[[i]])] <- "Unknown"  
   rownames(mn.list[[i]]) <- feature_all[[i]]$Human.gene.name
-  # 找到行名为'Unknown'的行的下标
   idx <- which(rownames(mn.list[[i]]) == 'Unknown')
-  
-  # 从data.in中删除行名为'Unknown'的行
   mn.list[[i]] <- mn.list[[i]][-idx, ]
 }
 
@@ -117,7 +111,7 @@ all_pheno$Celltype <- gsub("_\\d+$", "", all_pheno$Sample_ID)
 
 original_species <- sub(".*?_", "", all_pheno$Study_ID)
 levels(as.factor(original_species))
-# 替换为缩写名称
+
 for (i in seq_along(species)) {
   all_pheno$Study_ID <- gsub(species[i], all_name[i], all_pheno$Study_ID)
   all_pheno$Celltype<- gsub(paste0('_',species[i]), paste0('.',all_name[i]), all_pheno$Celltype)
@@ -177,7 +171,7 @@ hr = rowAnnotation(
     Species = species_col,
     Celltypes = cell.colors1
   ),
-  show_legend = FALSE,  # 不显示右侧注释的图例
+  show_legend = FALSE, 
   show_annotation_name = TRUE,
   annotation_name_side = "top"
 )
@@ -201,8 +195,8 @@ dev.off()
 write.csv(as.data.frame(celltype.NV),'/home/data/t090402/data/PBMC/plot/metaneighbor/celltype.NV.csv')
 celltype.NV <- read.csv("/home/data/t090402/data/PBMC/plot/metaneighbor/celltype.NV.csv", row.names = 1)
 
-############# 所有细胞 ##############
-sp.list <- readRDS('./rds/sp.list.quality_filter.rds')
+
+sp.list <- readRDS('./rds/sp.list.rds')
 ############ filter cells ############
 cellname <- list()
 for (i in names(sp.list)){
@@ -229,12 +223,9 @@ for (i in species){
 
 names(feature_all)
 
-# 循环遍历工作表和对应的列名称
 for (i in names(feature_all)) {
-  # 读取对应的工作表数据
   all_ortholog <- openxlsx::read.xlsx("./protein/ortholog_to_human.xlsx", sheet = i)
   column_name <- paste0(i, '.gene.name')
-  # 匹配并赋值给相应的列
   feature_all[[i]][["Human.gene.name"]] <- all_ortholog$Human.gene.name[match(feature_all[[i]][[column_name]], all_ortholog[[column_name]])]
 }
 
@@ -242,12 +233,9 @@ saveRDS(feature_all, './rds/all_cell_orthologs_to_human.rds')
 # feature_all <- readRDS('./rds/orthologs_to_mouse.rds')
 ######## gene name change #######
 for (i in names(sp.list)){
-  feature_all[[i]][is.na(feature_all[[i]])] <- "Unknown"  # 将没有匹配到的行名设置为 "Unknown"
+  feature_all[[i]][is.na(feature_all[[i]])] <- "Unknown" 
   rownames(sp.list[[i]]) <- feature_all[[i]]$Human.gene.name
-  # 找到行名为'Unknown'的行的下标
   idx <- which(rownames(sp.list[[i]]) == 'Unknown')
-  
-  # 从data.in中删除行名为'Unknown'的行
   sp.list[[i]] <- sp.list[[i]][-idx, ]
 }
 
@@ -294,7 +282,6 @@ all_pheno <- all_pheno %>%
 
 original_species <- sub(".*?_", "", all_pheno$Study_ID)
 levels(as.factor(original_species))
-# 替换为缩写名称
 for (i in seq_along(species)) {
   all_pheno$Study_ID <- gsub(species[i], all_name[i], all_pheno$Study_ID)
   all_pheno$Celltype<- gsub(paste0('_',species[i]), paste0('.',all_name[i]), all_pheno$Celltype)
@@ -336,7 +323,7 @@ write.csv(as.data.frame(celltype.NV),'/home/data/t090402/data/PBMC/plot/metaneig
 
 
 #BiocManager::install('factoextra') 
-library(factoextra)          #下载并加载factoextra包
+library(factoextra) 
 library(spatstat.geom)
 sampleDists <- dist(celltype.NV)
 
@@ -345,11 +332,8 @@ res2 <- hclust(sampleDists)
 fviz_dend(res2,
           rect_fill = T,
           k_colors = 'black',
-          # 字体大小
           cex = 0.8,
-          # 字体颜色
           color_labels_by_k=T,
-          # 平行放置
           horiz=T)
 ggsave('./plot/metaneighbor/cluster_celltype.pdf', height = 15, width = 5)
 
@@ -358,16 +342,12 @@ celltype.NV <- read.csv('/home/data/t090402/data/PBMC/plot/metaneighbor/celltype
 
 head(celltype.NV)
 
-# 使用melt函数转换数据
 melted_data <- reshape2::melt(celltype.NV, id.vars = "X")
 melted_data$variable <- as.character(melted_data$variable)
-# 输出转换后的数据框
 head(melted_data)
 
-# 提取cell type
 cell_types <- sub("\\..*", "", rownames(celltype.NV))
 
-# 提取interaction列
 melted_data$interaction <- paste0(sub("\\..*", "", melted_data$X),'-',sub("\\..*", "", melted_data$variable))
 melted_data$cross <- ifelse(sub("\\..*", "", melted_data$X) == sub("\\..*", "", melted_data$variable), 'Same-category', 'Cross-category')
 melted_data$species <- ifelse(substring(melted_data$X, nchar(melted_data$X) - 2) == 
@@ -375,7 +355,6 @@ melted_data$species <- ifelse(substring(melted_data$X, nchar(melted_data$X) - 2)
 melted_data$category <- ifelse(melted_data$species == "Same-specie", "Inner-specie",
                               ifelse(melted_data$cross == 'Same-category' & melted_data$species == "Cross-specie", 'Inner-category', 'Filter'))
 
-# 查看结果
 head(melted_data)
 
 openxlsx::write.xlsx(melted_data,'./plot/metaneighbor/melted_data.xlsx')
@@ -394,9 +373,9 @@ ggplot(melted_data[melted_data$X != melted_data$variable, ],
 ggviolin(melted_data, x="cross", y="value", 
          color = "cross",
          fill="cross",
-         #palette =c("#B3CDE3","#DECBE4"),#设置颜色
-         add = "boxplot",#添加箱线图
-         add.params = list(color="white"),#设置箱线图边颜色
+         #palette =c("#B3CDE3","#DECBE4"),
+         add = "boxplot",
+         add.params = list(color="white"),
          xlab = F
          )+
   NoLegend()+
@@ -412,9 +391,9 @@ ggsave('./plot/metaneighbor/category_same_cross.pdf', width = 4.5, height = 4.5)
 ggviolin(melted_data, x="species", y="value", 
          color = "species",
          fill="species",
-         #palette =c("#B3CDE3","#DECBE4"),#设置颜色
-         add = "boxplot",#添加箱线图
-         add.params = list(color="white"),#设置箱线图边颜色
+         #palette =c("#B3CDE3","#DECBE4"),
+         add = "boxplot",
+         add.params = list(color="white"),
          xlab = F
 )+
   NoLegend()+
@@ -430,9 +409,9 @@ ggsave('./plot/metaneighbor/species_same_cross.pdf', width = 4.5, height = 4.5)
 ggviolin(melted_data[melted_data$category != 'Filter',], x="category", y="value", 
          color = "category",
          fill="category",
-         #palette =c("#B3CDE3","#DECBE4"),#设置颜色
-         add = "boxplot",#添加箱线图
-         add.params = list(color="white"),#设置箱线图边颜色
+         #palette =c("#B3CDE3","#DECBE4"),
+         add = "boxplot",
+         add.params = list(color="white"),
          xlab = F
 )+
   NoLegend()+
