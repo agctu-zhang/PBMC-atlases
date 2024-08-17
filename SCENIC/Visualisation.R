@@ -17,53 +17,11 @@ library(cowplot)
 library(ggalluvial)
 
 setwd('~/data/PBMC/')
-# dir.create('./SCENIC')
-
-# scenicOptions <- initializeScenic(org="hgnc",#mouse填'mgi', human填'hgnc',fly填'dmel') 
-#                                   dbDir="./../../download/database/SCENIC/",
-#                                   dbs = list('500bp' = 'hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.genes_vs_motifs.rankings.feather',
-#                                              '10kb' = 'hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.genes_vs_motifs.rankings.feather'),
-                                  # nCores=8)#这里可以设置并行计算
-
 
 ############# export expression matrix and metadata #######
 species <- c('Catfish','Jacopever','Turtle','Chicken','Bat','Pig',
              'Cattle','Mouse','Rat','Monkey','Chimpanzee','Human')
-sp.list <- readRDS('./rds/sp.list.quality_filter.rds')
-
-# exprMat <- as.matrix(MC.seu.list[['Human']]@assays$RNA@data)
-# dim(exprMat)
-# cellInfo <- MC.seu.list[['Human']]@meta.data[,c(5,2,3)]
-# colnames(cellInfo) <- c('CellType', 'nGene', 'nUMI')
-# rownames(cellInfo) <- paste(names(MC.seu.list['Human']), rownames(cellInfo), sep = '_')
-# colnames(exprMat) <- paste(names(MC.seu.list['Human']), colnames(exprMat), sep = '_')
-# exprMat[1:4,1:4]
-# 
-# write.csv(t(exprMat), file = './SCENIC/human.csv')
-# write.table(cellInfo,'./SCENIC/human_metadata.xls',sep='\t',quote=F)
-# 
-# exprMat <- read.csv('./SCENIC/human.csv')
-# 
-# exprMat <- as.matrix(MC.seu.list[['Mouse']]@assays$RNA@data)
-# dim(exprMat)
-# cellInfo <- MC.seu.list[['Mouse']]@meta.data[,c(5,2,3)]
-# colnames(cellInfo) <- c('CellType', 'nGene', 'nUMI')
-# rownames(cellInfo) <- paste(names(MC.seu.list['Mouse']), rownames(cellInfo), sep = '_')
-# colnames(exprMat) <- paste(names(MC.seu.list['Mouse']), colnames(exprMat), sep = '_')
-# exprMat[1:4,1:4]
-# 
-# write.csv(t(exprMat), file = './SCENIC/mouse.csv')
-# write.table(cellInfo,'./SCENIC/mouse_metadata.xls',sep='\t',quote=F)
-# 
-# exprMat <- read.csv('./SCENIC/mouse.csv')
-# 
-# ########## plot ################
-# rss <- readRDS('./SCENIC/human/human_rss.rds')
-# regulon <- load('./SCENIC/human/human_regulon_RSS.Rdata')
-# loom <- open_loom('./SCENIC/human/human.aucell.loom')
-# 
-# Heatmap(rss)
-
+sp.list <- readRDS('./rds/sp.list.rds')
 ##############  #############
 exprMat.list <- list()
 
@@ -82,26 +40,18 @@ for (i in species){
 
 
 names(feature_all)
-
-# 同源转换
 for (i in names(feature_all)) {
-  # 读取对应的工作表数据
   all_ortholog <- openxlsx::read.xlsx("./protein/ortholog_to_human.xlsx", sheet = i)
   
-  
-  # 匹配并赋值给相应的列
   feature_all[[i]]$Human.gene.name <- all_ortholog$Human.gene.name[match(feature_all[[i]][[i]], all_ortholog[[paste0(i,'.gene.name')]])]
 }
 
 
 #######filter matrix
 for (i in names(exprMat.list)){
-  feature_all[[i]][is.na(feature_all[[i]])] <- "Unknown"  # 将没有匹配到的行名设置为 "Unknown"
+  feature_all[[i]][is.na(feature_all[[i]])] <- "Unknown"
   rownames(exprMat.list[[i]]) <- feature_all[[i]]$Human.gene.name
-  # 找到行名为'Unknown'的行的下标
   idx <- which(rownames(exprMat.list[[i]]) == 'Unknown')
-  
-  # 从data.in中删除行名为'Unknown'的行
   exprMat.list[[i]] <- exprMat.list[[i]][-idx, ]
 }
 
@@ -123,8 +73,6 @@ for (i in names(exprMat.list)){
   
   write.table(cellInfo,filename,sep='\t',quote=F)
 }
-
-
 ############# HOW MANY ORTHOLUES OF TF #########
 regulon.list <- list()
 for (i in species){
@@ -284,19 +232,19 @@ for (i in levels(rss_df$cell_type)){
                              rank < 4), color = "red", size = 2) +
     geom_text_repel(data = subset(rrs_df_sub, rank < 4), force = 1, point.padding = 0.2) + 
     labs(x = "Regulons", y = "Regulon Specificity Score", title = i) +
-    theme_minimal() +  # 使用最小化主题
+    theme_minimal() +  
     theme(
       panel.border = element_rect(
-        color = "black",  # 边框颜色
-        fill = NA,  # 填充颜色为空（透明）
-        linewidth = 1  # 边框宽度
+        color = "black",
+        fill = NA,
+        linewidth = 1 
       ),
-      panel.grid.major = element_blank(),  # 移除主要网格线
-      panel.grid.minor = element_blank(),  # 移除次要网格线
-      axis.line = element_line(color = "black"),  # 坐标轴线颜色
-      axis.text = element_text(size = 12, color = "black"),  # 坐标轴文本颜色和大小
-      axis.title = element_text(size = 14, color = "black"),  # 坐标轴标题颜色和大小
-      plot.title = element_text(size = 15, face = "bold", hjust = 0.5)  # 图表标题颜色、大小和位置
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      axis.line = element_line(color = "black"),  
+      axis.text = element_text(size = 12, color = "black"),
+      axis.title = element_text(size = 14, color = "black"), 
+      plot.title = element_text(size = 15, face = "bold", hjust = 0.5)
     )
 }
 plot.list[[1]]
@@ -348,22 +296,22 @@ merged_df <- merged_df %>%
 head(merged_df)
 
 ggplot(filter(merged_df,cell_type == 'B cells'), aes(x = RSSZ, y = avg.AUC)) +
-  geom_point(color = "darkblue", size = 2.5, shape = 21) +  # 设置散点的颜色和大小
-  labs(x = "RSSZ", y = "AUCell score") +  # 设置坐标轴标签
+  geom_point(color = "darkblue", size = 2.5, shape = 21) +
+  labs(x = "RSSZ", y = "AUCell score") + 
   coord_cartesian(ylim = c(0, 1)) +
   theme_minimal() +
   theme(
     panel.border = element_rect(
-      color = "black",  # 边框颜色
-      fill = NA,  # 填充颜色为空（透明）
-      linewidth = 1  # 边框宽度
+      color = "black", 
+      fill = NA,  
+      linewidth = 1 
     ),
-    panel.grid.major = element_blank(),  # 移除主要网格线
-    panel.grid.minor = element_blank(),  # 移除次要网格线
-    axis.line = element_line(color = "black"),  # 坐标轴线颜色
-    axis.text = element_text(size = 12, color = "black"),  # 坐标轴文本颜色和大小
-    axis.title = element_text(size = 14, color = "black"),  # 坐标轴标题颜色和大小
-    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)  # 图表标题颜色、大小和位置
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.text = element_text(size = 12, color = "black"), 
+    axis.title = element_text(size = 14, color = "black"), 
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
   ) +
   geom_vline(xintercept = 1, linetype = "dashed", color = "darkgreen") +
   geom_hline(yintercept = 0.1, linetype = "dashed", color = "darkgreen")
@@ -411,13 +359,13 @@ col_use <- c4a('paired',7)
 names(col_use) <- levels(km_csi$Module)
 
 top_anno <- HeatmapAnnotation(
-  cluster = anno_block(gp = gpar(fill = col_use, col = col_use), # 设置填充色
+  cluster = anno_block(gp = gpar(fill = col_use, col = col_use),
                        labels = levels(km_csi$Module),
                        labels_gp = gpar(cex = 0.3, col = col_use),
                        height = unit(0.2, "cm")
   ))
 left_anno <- rowAnnotation(
-  cluster = anno_block(gp = gpar(fill = col_use, col = col_use), # 设置填充色
+  cluster = anno_block(gp = gpar(fill = col_use, col = col_use),
                        labels = levels(km_csi$Module),
                        labels_gp = gpar(cex = 0.3, col = col_use),
                        width = unit(0.2, "cm")
@@ -494,8 +442,8 @@ ht <- Heatmap(t(module_matrix),
               column_names_gp = gpar(fontsize = 13),
               heatmap_legend_param = list(
                 title = '-LogP',
-                direction = "horizontal",  # 图例方向设置为水平
-                legend_width = unit(4, "cm")  # 调整图例宽度
+                direction = "horizontal",
+                legend_width = unit(4, "cm")
               ))
 
 
@@ -841,14 +789,13 @@ ggplot(module_conserved, aes(x = TF, y = Count)) +
     axis.title.x = element_blank(),
     axis.text.y = element_blank(),
     panel.background = element_blank(),
-    panel.grid.major = element_blank(),  # 去掉主要网格线
-    panel.grid.minor = element_blank(), # 去掉图形背景
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(), 
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ggsave('./plot/SCENIC/mudole_conserved_regulon.pdf', width = 6.5, height = 4.5)
 
 
 ########### DIMPLOT ###########
-# binaryRegulonActivity来自human
 regulon_conserved <- binaryRegulonActivity[c("MYB(+)","ERG(+)","HLTF(+)","HMGA1(+)"),] %>% t() %>% as.data.frame()
 
 regulon_conserved <- binaryRegulonActivity[c("TCF7L2(+)","SPI1(+)","FOSL2(+)","FOS(+)"),] %>% t() %>% as.data.frame()
@@ -887,7 +834,6 @@ gg1 <- ggplot() +
     legend.direction = "horizontal",
   )+ NoLegend()
 gg1
-# 创建图例图
 gg2 <- ggplot() +
   geom_point(data = regulon_conserved, aes(x = UMAP_1, y = UMAP_2, color = factor(`ERG(+)`)), size = 0.5) +
   scale_color_manual(values = c('0' = 'grey', '1' = 'darkred'), labels = c('0' = 'OFF', '1' = 'ON')) +
@@ -1077,22 +1023,16 @@ for (i in species){
   
   bi_sankey <- select(bi_sankey, -c(TF, Module)) %>% as.data.frame()
   
-  bi_sankey <- bi_sankey[, !sapply(bi_sankey, function(x) all(is.na(x)))] # 去除全部为 NA 的列
+  bi_sankey <- bi_sankey[, !sapply(bi_sankey, function(x) all(is.na(x)))] 
   
   head(bi_sankey)
   
   bi_sankey_melted <- data.frame()
   
-  # 遍历 bi_sankey 数据框的列
   for (col in colnames(bi_sankey)) {
-    # 提取非缺失值的 Module 列
     module_values <- bi_sankey[, col][!is.na(bi_sankey[, col])]
-    
-    # 创建一个数据框，其中包含两列：CellID 和 Module
     cell_id <- col
     data <- data.frame(CellID = cell_id, Module = module_values)
-    
-    # 将数据添加到结果数据框中
     bi_sankey_melted <- rbind(bi_sankey_melted, data)
   }
   
@@ -1370,8 +1310,6 @@ for(i in names(regulons.data)){
 
 View(regulons.data[[1]])
 
-
-####### 提取转录因子靶基因 #######
 regulons.conserved <- list()
 for(i in names(regulons.list[[1]])){
   regulons.conserved[[i]] <- list()
@@ -1429,8 +1367,6 @@ regulon.target <- regulon.target[duplicated(regulon.target$pair) == 'FALSE',]
 
 regulon.target <- dplyr::select(regulon.target, -pair)
 
-write.csv(regulon.target, './plot/SCENIC/conserved_regulon_monocyte.csv')
-openxlsx::write.xlsx(regulon.target, './plot/SCENIC/conserved_regulon_monocyte.xlsx')
 
 
 
